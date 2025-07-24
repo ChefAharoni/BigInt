@@ -179,6 +179,16 @@ public class BigInt {
         return pow;
     }
 
+    private static String shift(String s, int k)
+    {
+        if (s.equals("0")) return s;
+        StringBuilder sb = new StringBuilder();
+        sb.append(s);
+        // line below equals to `for` loop from 0 to `k`. IntelliJ suggestion
+        sb.append("0".repeat(Math.max(0, k)));
+        return sb.toString();
+    }
+
     /**
      * Performs the Karatsuba algorithm for multiplying two non-negative
      * integers. The base case is when both str1 and str2 contain 1 digit.
@@ -187,21 +197,44 @@ public class BigInt {
      * @return the product of the integers
      */
     private static String mult(String str1, String str2) {
-        String a1 = str1.substring(0, str1.length()/2);
-        String a0 = str1.substring(str1.length()/2);
 
-        String b1 = str2.substring(0, str2.length()/2);
-        String b0 = str2.substring(str2.length()/2);
+        // number of low-order (right-hand) digits that forms the a0 / b0
+        // since Karatsuba works like so: x = a1 * 10^m + a0 && y = b1 * 10^m + b0
+        int m = Math.max(str1.length(), str2.length()) / 2;
 
-        String c2 = (a1.length() > 1 || b1.length() > 1) ? mult(a1, b1) : multInts(a1, b1);
-        String c0 = (a0.length() > 1 || b0.length() > 1) ? mult(a0, b0) : multInts(a0, b0);
+        String a1 = str1.substring(0, str1.length() - m);
+        String a0 = str1.substring(str1.length() - m);
 
-        // (a1 + a0) * (b1 * b0) - (c2 + c0)
-        String c1 = subInts(multInts(addInts(a1, a0),
-                        (addInts(b1, b0))),
-                addInts(c2, c0));
+        String b1 = str2.substring(0, str2.length() - m);
+        String b0 = str2.substring(str2.length() - m);
 
-        return c2 + c1 + c0;
+        String c2 = mult(a1, b1);
+        String c0 = mult(a0, b0);
+//        String c2 = (a1.length() > 1 || b1.length() > 1) ? mult(a1, b1) : multInts(a1, b1);
+//        String c0 = (a0.length() > 1 || b0.length() > 1) ? mult(a0, b0) : multInts(a0, b0);
+
+        String c1 = subInts(subInts(mult(addInts(a1, a0), addInts(b1, b0)),
+                c2),
+                c0);
+
+        String p1 = shift(c2, 2 * m); // c2 * 10 ^ (2m)
+        String p2 = shift(c1, m); // c1 * 10 ^ m
+
+
+
+        // (a1 + a0) * (b1 + b0) - (c2 + c0)
+//        String c1_a = addInts(a1, a0);
+//        String c1_b = addInts(b1, b0);
+//        String c1_c = multInts(c1_a, c1_b);
+
+//        String c1_d = addInts(c2, c0);
+//        String c1 = subInts(c1_c, c1_d);
+//
+//        String c1 = subInts(multInts(addInts(a1, a0),
+//                        (addInts(b1, b0))),
+//                addInts(c2, c0));
+
+        return addInts(addInts(p1, p2), c0);
     }
 
     private static String multInts(String str1, String str2)
