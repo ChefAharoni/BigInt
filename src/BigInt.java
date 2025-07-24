@@ -187,14 +187,55 @@ public class BigInt {
      * @return the product of the integers
      */
     private static String mult(String str1, String str2) {
-        int a1 = Integer.parseInt(str1.substring(0, str1.length()/2));
-        int a0 = Integer.parseInt(str1.substring(str1.length()/2));
+        String a1 = str1.substring(0, str1.length()/2);
+        String a0 = str1.substring(str1.length()/2);
 
-        int b1 = Integer.parseInt(str2.substring(0, str2.length()/2));
-        int b0 = Integer.parseInt(str2.substring(str2.length()/2));
+        String b1 = str2.substring(0, str2.length()/2);
+        String b0 = str2.substring(str2.length()/2);
 
-        System.out.println("A1: " + a1 + ", A0: " + a0 + ", B1: " + b1 + ", B0: " + b0);
-        return "";
+        String c2 = (a1.length() > 1 || b1.length() > 1) ? mult(a1, b1) : multInts(a1, b1);
+        String c0 = (a0.length() > 1 || b0.length() > 1) ? mult(a0, b0) : multInts(a0, b0);
+
+        // (a1 + a0) * (b1 * b0) - (c2 + c0)
+        String c1 = subInts(multInts(addInts(a1, a0),
+                        (addInts(b1, b0))),
+                addInts(c2, c0));
+
+        return c2 + c1 + c0;
+    }
+
+    private static String multInts(String str1, String str2)
+    {
+        int x = parseInt(str1);
+        int y = parseInt(str2);
+
+        return String.valueOf(x * y);
+    }
+
+    private static String addInts(String str1, String str2)
+    {
+        int x = parseInt(str1);
+        int y = parseInt(str2);
+
+        return String.valueOf(x + y);
+    }
+
+    private static String subInts(String str1, String str2)
+    {
+        int x = parseInt(str1);
+        int y = parseInt(str2);
+
+        return String.valueOf(x - y);
+    }
+
+    private static int parseInt(String str)
+    {
+        try {
+            return Integer.parseInt(str);
+        }  catch (NumberFormatException e)
+        {
+            throw new NumberFormatException("Failed to parse int: " + str);
+        }
     }
 
     /**
@@ -226,7 +267,12 @@ public class BigInt {
 
     public static void main(String[] args) {
         // TODO
-        multiply("235", "123");
+        String rawResult = multiply(args[0], args[1]);
+        String multResult = addCommas(rawResult);
+
+        System.out.println("Result: " + multResult);
+        System.out.println("Raw Result: " + rawResult);
+//        System.out.println(multiply("2351", "1234"));
     }
 }
 
