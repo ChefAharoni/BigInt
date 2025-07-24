@@ -196,53 +196,45 @@ public class BigInt {
      * @param str2 String 2, representing a non-negative integer
      * @return the product of the integers
      */
-    private static String mult(String str1, String str2) {
-
-        // number of low-order (right-hand) digits that forms the a0 / b0
-        // since Karatsuba works like so: x = a1 * 10^m + a0 && y = b1 * 10^m + b0
-        int m = Math.max(str1.length(), str2.length()) / 2;
-
-        String a1 = str1.substring(0, str1.length() - m);
-        String a0 = str1.substring(str1.length() - m);
-
-        String b1 = str2.substring(0, str2.length() - m);
-        String b0 = str2.substring(str2.length() - m);
-
-        String c2 = mult(a1, b1);
-        String c0 = mult(a0, b0);
-//        String c2 = (a1.length() > 1 || b1.length() > 1) ? mult(a1, b1) : multInts(a1, b1);
-//        String c0 = (a0.length() > 1 || b0.length() > 1) ? mult(a0, b0) : multInts(a0, b0);
-
-        String c1 = subInts(subInts(mult(addInts(a1, a0), addInts(b1, b0)),
-                c2),
-                c0);
-
-        String p1 = shift(c2, 2 * m); // c2 * 10 ^ (2m)
-        String p2 = shift(c1, m); // c1 * 10 ^ m
-
-
-
-        // (a1 + a0) * (b1 + b0) - (c2 + c0)
-//        String c1_a = addInts(a1, a0);
-//        String c1_b = addInts(b1, b0);
-//        String c1_c = multInts(c1_a, c1_b);
-
-//        String c1_d = addInts(c2, c0);
-//        String c1 = subInts(c1_c, c1_d);
-//
-//        String c1 = subInts(multInts(addInts(a1, a0),
-//                        (addInts(b1, b0))),
-//                addInts(c2, c0));
-
-        return addInts(addInts(p1, p2), c0);
-    }
-
-    private static String multInts(String str1, String str2)
+    private static String mult(String str1, String str2)
+    // My version of this worked only for 2 digit multiplication
+    // Used LibreChat (Columbia's experimental AI) to diagnose and solve
     {
-        int x = parseInt(str1);
-        int y = parseInt(str2);
 
-        return String.valueOf(x * y);
+        /* ---------- 1. base cases --------------------------------- */
+        if (str1.equals("0") || str2.equals("0")) return "0";
+
+        // single–digit × single–digit → do it directly
+        if (str1.length() == 1 && str2.length() == 1)
+        {
+            int prod = (str1.charAt(0) - '0') * (str2.charAt(0) - '0');
+            return Integer.toString(prod);
+        }
+
+        /* ---------- 2. prepare the strings ------------------------ */
+        int n = Math.max(str1.length(), str2.length());   // common length
+        int m = n / 2;                                    // split position
+
+        // left-pad the shorter operand with zeros
+        str1 = String.format("%" + n + "s", str1).replace(' ', '0');
+        str2 = String.format("%" + n + "s", str2).replace(' ', '0');
+
+        /* ---------- 3. split into high / low parts ---------------- */
+        String a1 = str1.substring(0, n - m);          // high
+        String a0 = str1.substring(n - m);   // low
+        String b1 = str2.substring(0, n - m);
+        String b0 = str2.substring(n - m);
+
+        /* ---------- 4. three recursive products ------------------- */
+        String c2 = mult(a1, b1);                            // a1·b1
+        String c0 = mult(a0, b0);                            // a0·b0
+        String c1 = mult(addInts(a1, a0), addInts(b1, b0));  // (a1+a0)(b1+b0)
+        c1 = subInts(subInts(c1, c2), c0);                   // (a1+a0)(b1+b0)-c2-c0
+
+        /* ---------- 5. combine the three parts -------------------- */
+        String part1 = shift(c2, 2 * m);   // c2 · 10^(2m)
+        String part2 = shift(c1,     m);      // c1 · 10^m
+        return addInts(addInts(part1, part2), c0);
     }
 
     private static String addInts(String str1, String str2)
