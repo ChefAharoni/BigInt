@@ -3,7 +3,7 @@
  * Author        : Amit Aharoni
  * Version       : 1.0
  * Date          : July 18, 2025
- * Last modified : Put the date here.
+ * Last modified : Friday, July 25th, 2025
  * Description   : Adds, subtracts, and multiplies two large integers
  *                 efficiently using Strings.
  ******************************************************************************/
@@ -120,7 +120,6 @@ public class BigInt {
      * @return the sum of the integers
      */
     private static String sum(String str1, String str2) {
-        // TODO
         // make equal length (pad with zeroes)
         // add in reverse (index at length - 1)
         // divide sum by 10 = result is carry to the next computation
@@ -165,9 +164,15 @@ public class BigInt {
         validateParameters(str1, str2);
         boolean isStr1Negative = str1.charAt(0) == '-',
                 isStr2Negative = str2.charAt(0) == '-';
-        // TODO
 
-        if (isStr1Negative && !isStr2Negative) return sub(str2, str1);
+        if (str1.equals("0") || str1.equals("-0")) return str2;
+        else if (str2.equals("0") || str2.equals("-0")) return str1;
+
+        if (isStr1Negative && !isStr2Negative)
+        {
+            String absStr1 = str1.substring(1);
+            return sub(str2, absStr1);
+        }
         else if (!isStr1Negative && isStr2Negative) return sub(str1, str2);
         else if (isStr1Negative && isStr2Negative)
         {
@@ -231,6 +236,7 @@ public class BigInt {
                 {
                     sum = diff + 10;
                     carry++;
+                    diff+= 10;
                 } while (sum < 0);
             }
             sum = diff < 0 ? diff + 10 : diff;
@@ -255,7 +261,18 @@ public class BigInt {
         boolean isStr1Greater = isGreater(str1, str2),
                 isStr1Negative = str1.charAt(0) == '-',
                 isStr2Negative = str2.charAt(0) == '-';
-        // TODO
+
+        // Revise zeros
+        if (str1.equals("0") || str1.equals("-0")) return str2;
+        else if (str2.equals("0") || str2.equals("-0")) return str1;
+
+        if (isStr2Negative && !isStr1Negative) return sum(str1, str2);
+        else if (isStr1Negative && !isStr2Negative)
+        {
+            String absStr1 = str1.substring(1);
+            String absStr2 = str2.substring(1);
+            return "-" + sum(absStr1, absStr2) ;
+        }
         return "";
     }
 
@@ -362,7 +379,7 @@ public class BigInt {
     public static String multiply(
             String str1, String str2) throws NumberFormatException {
         validateParameters(str1, str2);
-        // TODO
+
         return mult(str1, str2);
     }
 
@@ -379,7 +396,6 @@ public class BigInt {
     }
 
     public static void main(String[] args) {
-        // TODO
         if (args.length != 3)
         {
             System.err.println("Usage: java BigInt <operation> <integer a> <integer b>");
@@ -394,23 +410,22 @@ public class BigInt {
             result = switch (operation)
             {
                 case "add" -> add(args[1], args[2]);
-                case "sub" -> sub(args[1], args[2]);
+                case "sub" -> subtract(args[1], args[2]);
                 case "mult" -> mult(args[1], args[2]);
                 default ->
-                        throw new IllegalArgumentException("Unknown operation: " + operation);
+                        throw new NumberFormatException(
+                                "Error: Unknown operation '" + operation +
+                                        "'. Allowed operations: add, sub, mult.");
             };
         } catch (NumberFormatException e)
         {
             System.err.println(e.getMessage());
             System.exit(1);
         }
-//        String rawResult = multiply(args[1], args[2]);
+
         String formattedResult = addCommas(result);
 
         System.out.println(formattedResult);
-//        System.out.println("Result: " + multResult);
-//        System.out.println("Raw Result: " + rawResult);
-//        System.out.println(multiply("2351", "1234"));
     }
 }
 
