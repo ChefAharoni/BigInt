@@ -167,6 +167,14 @@ public class BigInt {
                 isStr2Negative = str2.charAt(0) == '-';
         // TODO
 
+        if (isStr1Negative && !isStr2Negative) return sub(str2, str1);
+        else if (!isStr1Negative && isStr2Negative) return sub(str1, str2);
+        else if (isStr1Negative && isStr2Negative)
+        {
+            String result = sum(str1, str2);
+            return "-" + result;
+        }
+
         return sum(str1, str2);
     }
 
@@ -199,8 +207,6 @@ public class BigInt {
      * @return the difference of the integers (str1 - str2)
      */
     private static String sub(String str1, String str2) {
-        // TODO
-
         if (str1.length() != str2.length())
         {
             int delta = Math.abs(str1.length() - str2.length());
@@ -380,12 +386,24 @@ public class BigInt {
             System.exit(1);
         }
         String operation = args[0];
-        String result = switch (operation) {
-            case "add" -> add(args[1], args[2]);
-            case "sub" -> sub(args[1], args[2]);
-            case "mult" -> mult(args[1], args[2]);
-            default -> throw new IllegalArgumentException("Unknown operation: " + operation);
-        };
+
+        String result = null;
+
+        try
+        {
+            result = switch (operation)
+            {
+                case "add" -> add(args[1], args[2]);
+                case "sub" -> sub(args[1], args[2]);
+                case "mult" -> mult(args[1], args[2]);
+                default ->
+                        throw new IllegalArgumentException("Unknown operation: " + operation);
+            };
+        } catch (NumberFormatException e)
+        {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
 //        String rawResult = multiply(args[1], args[2]);
         String formattedResult = addCommas(result);
 
