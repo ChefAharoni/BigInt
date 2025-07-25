@@ -121,7 +121,35 @@ public class BigInt {
      */
     private static String sum(String str1, String str2) {
         // TODO
-        return "";
+        // make equal length (pad with zeroes)
+        // add in reverse (index at length - 1)
+        // divide sum by 10 = result is carry to the next computation
+        // mod sum by 10 = this is the new sum
+        // return the answer in reverse
+        if (str1.length() != str2.length())
+        {
+            int delta = Math.abs(str1.length() - str2.length());
+
+            if (str1.length() > str2.length())
+                str2 = padZeroes(str2, delta); // add zeroes to str1
+            else // str2.length > str1.length
+                str1 = padZeroes(str1, delta); // add zeroes to str2
+        }
+
+        StringBuilder result = new StringBuilder();
+        int sum;
+        int carry = 0;
+
+        for (int i = str1.length() - 1; i >= 0; i--)
+        {
+            // 0 is 48 in ASCII
+            sum = (str1.charAt(i) - '0') + (str2.charAt(i) - '0') + carry;
+            carry = sum / 10;
+            sum %= 10;
+            result.append(sum);
+        }
+
+        return result.reverse().toString();
     }
 
     /**
@@ -138,8 +166,30 @@ public class BigInt {
         boolean isStr1Negative = str1.charAt(0) == '-',
                 isStr2Negative = str2.charAt(0) == '-';
         // TODO
-        return "";
+
+        return sum(str1, str2);
     }
+
+    private static String padZeroes(String str, int delta)
+    {
+        // Repeat is same as for loop from i to delta, IntelliJ suggestions
+        return "0".repeat(Math.max(0, delta)) + str;
+    }
+
+//    private static String getDelta(String str1, String str2)
+//    {
+//        if (str1.length() != str2.length())
+//        {
+//            int delta = Math.abs(str1.length() - str2.length());
+//
+//            if (str1.length() > str2.length())
+//                str2 = padZeroes(str2, delta); // add zeroes to str1
+//            else // str2.length > str1.length
+//                str1 = padZeroes(str1, delta); // add zeroes to str2
+//        }
+//
+//        return str1, str2;
+//    }
 
     /**
      * Subtracts two non-negative integers, whose digits are stored in Strings,
@@ -150,7 +200,39 @@ public class BigInt {
      */
     private static String sub(String str1, String str2) {
         // TODO
-        return "";
+
+        if (str1.length() != str2.length())
+        {
+            int delta = Math.abs(str1.length() - str2.length());
+
+            if (str1.length() > str2.length())
+                str2 = padZeroes(str2, delta); // add zeroes to str1
+            else // str2.length > str1.length
+                str1 = padZeroes(str1, delta); // add zeroes to str2
+        }
+
+        StringBuilder result = new StringBuilder();
+        int diff, sum;
+        int carry = 0;
+
+        for (int i = str1.length() - 1; i >= 0; i--)
+        {
+            // 0 is 48 in ASCII
+            diff = (str1.charAt(i) - '0') - (str2.charAt(i) - '0') - carry;
+            if (diff < 0)
+            {
+                do
+                {
+                    sum = diff + 10;
+                    carry++;
+                } while (sum < 0);
+            }
+            sum = diff < 0 ? diff + 10 : diff;
+            sum %= 10;
+            result.append(sum);
+        }
+
+        return result.reverse().toString();
     }
 
     /**
@@ -292,11 +374,24 @@ public class BigInt {
 
     public static void main(String[] args) {
         // TODO
-        String rawResult = multiply(args[0], args[1]);
-        String multResult = addCommas(rawResult);
+        if (args.length != 3)
+        {
+            System.err.println("Usage: java BigInt <operation> <integer a> <integer b>");
+            System.exit(1);
+        }
+        String operation = args[0];
+        String result = switch (operation) {
+            case "add" -> add(args[1], args[2]);
+            case "sub" -> sub(args[1], args[2]);
+            case "mult" -> mult(args[1], args[2]);
+            default -> throw new IllegalArgumentException("Unknown operation: " + operation);
+        };
+//        String rawResult = multiply(args[1], args[2]);
+        String formattedResult = addCommas(result);
 
-        System.out.println("Result: " + multResult);
-        System.out.println("Raw Result: " + rawResult);
+        System.out.println(formattedResult);
+//        System.out.println("Result: " + multResult);
+//        System.out.println("Raw Result: " + rawResult);
 //        System.out.println(multiply("2351", "1234"));
     }
 }
@@ -308,4 +403,12 @@ e.g. -5 and -3 --> -5 + -3
 -5 + 3
 "-" + (5-3)
 -3 + 5 = 5 - 3
+ */
+
+/*
+start at length - 1
+add
+sum / 10 = 1.3
+carry becomes 1 (truncated)
+sum % 10 = 3
  */
