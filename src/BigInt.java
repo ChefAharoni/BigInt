@@ -1,3 +1,5 @@
+import java.math.BigInteger;
+
 /*******************************************************************************
  * Name          : BigInt.java
  * Author        : Amit Aharoni
@@ -144,11 +146,15 @@ public class BigInt {
             // 0 is 48 in ASCII
             sum = (str1.charAt(i) - '0') + (str2.charAt(i) - '0') + carry;
             carry = sum / 10;
-            sum %= 10;
-            result.append(sum);
+//            sum %= 10;
+            result.append(sum % 10);
         }
 
-        return result.reverse().toString();
+        // emit the final carry (if exists)
+        if (carry != 0)
+            result.append(carry);
+
+        return removeLeadingZeros(result.reverse().toString());
     }
 
     /**
@@ -166,21 +172,39 @@ public class BigInt {
                 isStr2Negative = str2.charAt(0) == '-';
 
         if (str1.equals("0") || str1.equals("-0")) return str2;
-        else if (str2.equals("0") || str2.equals("-0")) return str1;
+        if (str2.equals("0") || str2.equals("-0")) return str1;
 
+        String absStr1 = isStr1Negative ? str1.substring(1) : str1;
+        String absStr2 = isStr2Negative ? str2.substring(1) : str2;
+
+        // both positive
+        if (!isStr1Negative && !isStr2Negative)
+            return sum(absStr1, absStr2);
+
+        // both negative
+        if (isStr1Negative && isStr2Negative)
+            return "-" + sum(absStr1, absStr2);
+
+        // str1 is positive, str2 is negative
+        if (!isStr1Negative && isStr2Negative)
+        {
+            if (isAbsGreater(absStr1, absStr2))
+                return sub(absStr1, absStr2);
+            else
+                return "-" + sub(absStr2, absStr1);
+        }
+
+        // str1 is negative, str2 is positive
         if (isStr1Negative && !isStr2Negative)
         {
-            String absStr1 = str1.substring(1);
-            return sub(str2, absStr1);
-        }
-        else if (!isStr1Negative && isStr2Negative) return sub(str1, str2);
-        else if (isStr1Negative && isStr2Negative)
-        {
-            String result = sum(str1, str2);
-            return "-" + result;
+            if (isAbsGreater(absStr2, absStr1))
+                return sub(absStr2, absStr1);
+            else
+                return "-" + sub(absStr1, absStr2);
         }
 
-        return sum(str1, str2);
+        // (can't touch this)
+        throw new IllegalStateException();
     }
 
     private static String padZeroes(String str, int delta)
@@ -188,21 +212,6 @@ public class BigInt {
         // Repeat is same as for loop from i to delta, IntelliJ suggestions
         return "0".repeat(Math.max(0, delta)) + str;
     }
-
-//    private static String getDelta(String str1, String str2)
-//    {
-//        if (str1.length() != str2.length())
-//        {
-//            int delta = Math.abs(str1.length() - str2.length());
-//
-//            if (str1.length() > str2.length())
-//                str2 = padZeroes(str2, delta); // add zeroes to str1
-//            else // str2.length > str1.length
-//                str1 = padZeroes(str1, delta); // add zeroes to str2
-//        }
-//
-//        return str1, str2;
-//    }
 
     /**
      * Subtracts two non-negative integers, whose digits are stored in Strings,
@@ -212,9 +221,10 @@ public class BigInt {
      * @return the difference of the integers (str1 - str2)
      */
     private static String sub(String str1, String str2) {
-        if (str1.length() != str2.length())
+        int str1len = str1.length(), str2len = str2.length();
+        if (str1len != str2len)
         {
-            int delta = Math.abs(str1.length() - str2.length());
+            int delta = Math.abs(str1len- str2len);
 
             if (str1.length() > str2.length())
                 str2 = padZeroes(str2, delta); // add zeroes to str1
@@ -223,28 +233,24 @@ public class BigInt {
         }
 
         StringBuilder result = new StringBuilder();
-        int diff, sum;
         int carry = 0;
 
         for (int i = str1.length() - 1; i >= 0; i--)
         {
             // 0 is 48 in ASCII
-            diff = (str1.charAt(i) - '0') - (str2.charAt(i) - '0') - carry;
+            int diff = (str1.charAt(i) - '0') - (str2.charAt(i) - '0') - carry;
             if (diff < 0)
             {
-                do
-                {
-                    sum = diff + 10;
-                    carry++;
-                    diff+= 10;
-                } while (sum < 0);
-            }
-            sum = diff < 0 ? diff + 10 : diff;
-            sum %= 10;
-            result.append(sum);
+                diff += 10;
+                carry = 1;
+            } else
+                carry = 0;
+
+            result.append(diff);
         }
 
-        return result.reverse().toString();
+        // remove trailing zeros from the beginning with regex
+        return removeLeadingZeros(result.reverse().toString());
     }
 
     /**
@@ -262,18 +268,46 @@ public class BigInt {
                 isStr1Negative = str1.charAt(0) == '-',
                 isStr2Negative = str2.charAt(0) == '-';
 
-        // Revise zeros
-        if (str1.equals("0") || str1.equals("-0")) return str2;
-        else if (str2.equals("0") || str2.equals("-0")) return str1;
+        if (str2.equals("0") || str2.equals("-0")) return removeLeadingZeros(str1);
+        if (str1.equals("0") || str1.equals("-0"))
+            // Keep the negative sign in the result: 0 - x = -x
+            return str2.startsWith("-")
+                    ? str2.substring(1)
+                    : "-" + str2;
 
-        if (isStr2Negative && !isStr1Negative) return sum(str1, str2);
-        else if (isStr1Negative && !isStr2Negative)
+
+        // strip negative signs for helper methods
+        String absStr1 = isStr1Negative ? str1.substring(1) : str1;
+        String absStr2 = isStr2Negative ? str2.substring(1) : str2;
+
+        // both positive
+        if (!isStr1Negative && !isStr2Negative)
         {
-            String absStr1 = str1.substring(1);
-            String absStr2 = str2.substring(1);
-            return "-" + sum(absStr1, absStr2) ;
+            if (isStr1Greater)
+                return sub(absStr1, absStr2);
+            else
+                return "-" + sub(absStr2, absStr1);
         }
-        return "";
+
+        // both negative
+        if (isStr1Negative && isStr2Negative)
+        {
+            if (!isStr1Greater)
+                return sub(absStr2, absStr1); // call with bigger
+            else  // if str1 IS greater
+                return "-" + sub(absStr1, absStr2);
+        }
+
+        // str1 is positive, str2 is negative
+        if (!isStr1Negative && isStr2Negative)
+            return sum(absStr1, absStr2);
+
+        // str1 is negative, str2 is positive
+        if (isStr1Negative && !isStr2Negative)
+            return "-" + sum(absStr1, absStr2);
+
+        // (can't touch this)
+        throw new IllegalStateException();
     }
 
     private static int nextPowerOf2(int n) {
@@ -321,8 +355,8 @@ public class BigInt {
         int m = n / 2;                                    // split position
 
         // left-pad the shorter operand with zeros
-        str1 = String.format("%" + n + "s", str1).replace(' ', '0');
-        str2 = String.format("%" + n + "s", str2).replace(' ', '0');
+        str1 = padZeroes(str1, n - str1.length());
+        str2 = padZeroes(str2, n - str2.length());
 
         /* ---------- 3. split into high / low parts ---------------- */
         String a1 = str1.substring(0, n - m);          // high
@@ -333,29 +367,13 @@ public class BigInt {
         /* ---------- 4. three recursive products ------------------- */
         String c2 = mult(a1, b1);                            // a1·b1
         String c0 = mult(a0, b0);                            // a0·b0
-        String c1 = mult(addInts(a1, a0), addInts(b1, b0));  // (a1+a0)(b1+b0)
-        c1 = subInts(subInts(c1, c2), c0);                   // (a1+a0)(b1+b0)-c2-c0
+        String c1 = mult(sum(a1, a0), sum(b1, b0));  // (a1+a0)(b1+b0)
+        c1 = sub(sub(c1, c2), c0);                   // (a1+a0)(b1+b0)-c2-c0
 
         /* ---------- 5. combine the three parts -------------------- */
         String part1 = shift(c2, 2 * m);   // c2 · 10^(2m)
         String part2 = shift(c1,     m);      // c1 · 10^m
-        return addInts(addInts(part1, part2), c0);
-    }
-
-    private static String addInts(String str1, String str2)
-    {
-        int x = parseInt(str1);
-        int y = parseInt(str2);
-
-        return String.valueOf(x + y);
-    }
-
-    private static String subInts(String str1, String str2)
-    {
-        int x = parseInt(str1);
-        int y = parseInt(str2);
-
-        return String.valueOf(x - y);
+        return sum(sum(part1, part2), c0);
     }
 
     private static int parseInt(String str)
@@ -364,6 +382,18 @@ public class BigInt {
             return Integer.parseInt(str);
         }  catch (NumberFormatException e)
         {
+            BigInteger maxInt = BigInteger.valueOf(Integer.MAX_VALUE);
+            BigInteger minInt = BigInteger.valueOf(Integer.MIN_VALUE);
+            BigInteger n;
+            if (str.charAt(0) == '-')
+                n = new BigInteger(str.substring(1));
+            else
+                n = new BigInteger(str);
+            System.out.println("n > Integer.Max_Value? " +
+                    (n.compareTo(maxInt) > 0));
+            System.out.println("n < Integer.MinValue? " +
+                    (n.compareTo(minInt) < 0));
+
             throw new NumberFormatException("Failed to parse int: " + str);
         }
     }
@@ -380,7 +410,27 @@ public class BigInt {
             String str1, String str2) throws NumberFormatException {
         validateParameters(str1, str2);
 
-        return mult(str1, str2);
+        // determine sign of the result
+        boolean neg1 = str1.charAt(0) == '-';
+        boolean neg2 = str2.charAt(0) == '-';
+        boolean resultNegative = neg1 ^ neg2;
+
+        // strip leading '-' for the helpers
+        String a = neg1 ? str1.substring(1) : str1;
+        String b = neg2 ? str2.substring(1) : str2;
+
+        // compute the unsigned product
+        String result = mult(a, b);
+
+        // normalize to avoid "-0"
+        if (result.equals("0")) {
+            return "0";
+        }
+
+        // prefix minus if needed
+        return resultNegative
+                ? "-" + result
+                : result;
     }
 
     private static String addCommas(String str) {
@@ -402,7 +452,6 @@ public class BigInt {
             System.exit(1);
         }
         String operation = args[0];
-
         String result = null;
 
         try
@@ -411,7 +460,7 @@ public class BigInt {
             {
                 case "add" -> add(args[1], args[2]);
                 case "sub" -> subtract(args[1], args[2]);
-                case "mult" -> mult(args[1], args[2]);
+                case "mult" -> multiply(args[1], args[2]);
                 default ->
                         throw new NumberFormatException(
                                 "Error: Unknown operation '" + operation +
@@ -428,20 +477,3 @@ public class BigInt {
         System.out.println(formattedResult);
     }
 }
-
-/*
-example for negative numbers:
-e.g. -5 and -3 --> -5 + -3
-"-" + "8"
--5 + 3
-"-" + (5-3)
--3 + 5 = 5 - 3
- */
-
-/*
-start at length - 1
-add
-sum / 10 = 1.3
-carry becomes 1 (truncated)
-sum % 10 = 3
- */
